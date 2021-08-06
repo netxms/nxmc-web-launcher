@@ -1,0 +1,49 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm' version '1.5.21'
+}
+
+group 'org.netxms'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+//def slf4jVersion = "1.7.32"
+def slf4jVersion = "2.0.0-alpha1"
+def junitVersion = "5.7.2"
+//def jettyVersion = "9.4.43.v20210629"
+def jettyVersion = "10.0.6"
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.5.21"
+    implementation("org.jetbrains.kotlinx:kotlinx-cli-jvm:0.3.2")
+
+    implementation "org.slf4j:slf4j-api:${slf4jVersion}"
+    implementation "org.slf4j:slf4j-simple:${slf4jVersion}"
+
+    //noinspection GradlePackageUpdate (10.x is latest Jetty which supports pre-servlet5)
+    implementation "org.eclipse.jetty:jetty-server:${jettyVersion}"
+    //noinspection GradlePackageUpdate
+    implementation "org.eclipse.jetty:jetty-servlet:${jettyVersion}"
+    //noinspection GradlePackageUpdate
+    implementation "org.eclipse.jetty:jetty-webapp:${jettyVersion}"
+
+    testImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+}
+
+test {
+    useJUnitPlatform()
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": "org.netxms.web.LauncherKt"
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
