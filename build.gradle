@@ -43,5 +43,12 @@ jar {
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
+
+    if (file("nxmc.war").exists()) {
+        from(zipTree("nxmc.war")) {
+            into('/META-INF/webapps/nxmc')
+        }
+    }
+
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }

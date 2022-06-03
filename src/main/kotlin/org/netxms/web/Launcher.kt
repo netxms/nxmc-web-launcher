@@ -4,40 +4,65 @@ import kotlinx.cli.ArgParser
 import kotlinx.cli.ArgType
 import kotlinx.cli.default
 import org.eclipse.jetty.server.*
+import org.eclipse.jetty.util.resource.Resource
 import org.eclipse.jetty.util.ssl.SslContextFactory
 import org.eclipse.jetty.util.thread.QueuedThreadPool
 import org.eclipse.jetty.webapp.WebAppContext
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 
 fun main(args: Array<String>) {
     val parser = ArgParser("netxms-web-launcher")
 
     val httpPort by parser.option(
-        ArgType.Int,
-        description = "Listen Port for HTTP connector, 0 will disable connector"
+        ArgType.Int, description = "Listen Port for HTTP connector, 0 will disable connector"
     ).default(8080)
 
     val httpsPort by parser.option(
-        ArgType.Int,
-        description = "Listen Port for HTTPS connector, 0 will disable connector"
+        ArgType.Int, description = "Listen Port for HTTPS connector, 0 will disable connector"
     ).default(0)
 
     val keystore by parser.option(
-        ArgType.String,
-        description = "Location of the keystore file with server's certificate and private key"
-    ).default("/var/lib/netxms/nxmc.jks")
+        ArgType.String, description = "Location of the keystore file with server's certificate and private key"
+    ).default("/var/lib/netxms/nxmc.pkcs12")
 
     val keystorePassword by parser.option(
-        ArgType.String,
-        description = "Keystore file password"
+        ArgType.String, description = "Keystore file password"
     )
 
     val war by parser.option(
         ArgType.String,
-        description = "nxmc.war file location"
-    ).default("/var/lib/netxms/nxmc.war")
+        description = "nxmc.war file location",
+    )
+
+    val log by parser.option(
+        ArgType.String, description = "Log file name or special names \"System.err\"/\"System.out\""
+    ).default("System.err")
+    val logLevel by parser.option(
+        ArgType.String, description = "Verbosity level"
+    ).default("INFO")
+
+    val accessLog by parser.option(
+        ArgType.String, description = "Write access log to separate file, otherwise will be sent to common log"
+    )
 
     parser.parse(args)
 
+    System.setProperty(org.slf4j.simple.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, logLevel)
+    System.setProperty(org.slf4j.simple.SimpleLogger.LOG_FILE_KEY, log)
+
+    startServer(httpPort, httpsPort, keystore, keystorePassword, war, accessLog)
+}
+
+private fun startServer(
+    httpPort: Int,
+    httpsPort: Int,
+    keystore: String,
+    keystorePassword: String?,
+    war: String?,
+    accessLog: String?
+) {
     val threadPool = QueuedThreadPool()
     threadPool.name = "server"
 
@@ -63,9 +88,24 @@ fun main(args: Array<String>) {
     }
 
     val context = WebAppContext()
-    context.setWar(war)
+    if (war != null) {
+        context.war = war
+    } else {
+        context.setWarResource(Resource.newClassPathResource("/META-INF/webapps/nxmc"))
+    }
     context.contextPath = "/"
     server.handler = context
 
-    server.start()
+    val logWriter: RequestLog.Writer = if (accessLog != null) {
+        RequestLogWriter(accessLog)
+    } else {
+        Slf4jRequestLogWriter()
+    }
+    server.requestLog = CustomRequestLog(logWriter, CustomRequestLog.EXTENDED_NCSA_FORMAT)
+
+    if (context.war == null) {
+        println("ERROR: WAR file is not available. Set location with '--war' argument.")
+    } else {
+        server.start()
+    }
 }
