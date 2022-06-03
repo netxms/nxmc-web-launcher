@@ -18,7 +18,6 @@ fun main(args: Array<String>) {
     val httpPort by parser.option(
         ArgType.Int, description = "Listen Port for HTTP connector, 0 will disable connector"
     ).default(8080)
-
     val httpsPort by parser.option(
         ArgType.Int, description = "Listen Port for HTTPS connector, 0 will disable connector"
     ).default(0)
@@ -26,10 +25,10 @@ fun main(args: Array<String>) {
     val keystore by parser.option(
         ArgType.String, description = "Location of the keystore file with server's certificate and private key"
     ).default("/var/lib/netxms/nxmc.pkcs12")
-
-    val keystorePassword by parser.option(
-        ArgType.String, description = "Keystore file password"
-    )
+    var keystorePassword by parser.option(
+        ArgType.String,
+        description = "Keystore file password. If environment variable exists with this name - it's value will be used instead"
+    ).default("")
 
     val war by parser.option(
         ArgType.String,
@@ -42,12 +41,15 @@ fun main(args: Array<String>) {
     val logLevel by parser.option(
         ArgType.String, description = "Verbosity level"
     ).default("INFO")
-
     val accessLog by parser.option(
         ArgType.String, description = "Write access log to separate file, otherwise will be sent to common log"
     )
 
     parser.parse(args)
+
+    if (System.getenv().containsKey(keystorePassword)) {
+        keystorePassword = System.getenv(keystorePassword)
+    }
 
     System.setProperty(org.slf4j.simple.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, logLevel)
     System.setProperty(org.slf4j.simple.SimpleLogger.LOG_FILE_KEY, log)
