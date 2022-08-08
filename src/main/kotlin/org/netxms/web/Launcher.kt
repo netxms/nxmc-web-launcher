@@ -60,12 +60,7 @@ fun main(args: Array<String>) {
 }
 
 private fun startServer(
-    httpPort: Int,
-    httpsPort: Int,
-    keystore: String,
-    keystorePassword: String?,
-    war: String?,
-    accessLog: String?
+    httpPort: Int, httpsPort: Int, keystore: String, keystorePassword: String?, war: String?, accessLog: String?
 ) {
     val allowedMethods = EnumSet.of(HttpMethod.GET, HttpMethod.HEAD, HttpMethod.POST)
 
@@ -94,7 +89,7 @@ private fun startServer(
     if (httpsPort != 0) {
         val sslContextFactory = SslContextFactory.Server()
         sslContextFactory.keyStorePath = keystore
-        sslContextFactory.setKeyStorePassword(keystorePassword)
+        sslContextFactory.keyStorePassword = keystorePassword
         val tls = SslConnectionFactory(sslContextFactory, http.protocol)
         val sslConnector = ServerConnector(server, tls, http)
         sslConnector.port = httpsPort
