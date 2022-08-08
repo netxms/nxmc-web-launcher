@@ -5,11 +5,9 @@ import kotlinx.cli.ArgType
 import kotlinx.cli.default
 import org.eclipse.jetty.http.HttpMethod
 import org.eclipse.jetty.http.HttpStatus
-import org.eclipse.jetty.security.ConstraintMapping
 import org.eclipse.jetty.security.ConstraintSecurityHandler
 import org.eclipse.jetty.server.*
 import org.eclipse.jetty.util.resource.Resource
-import org.eclipse.jetty.util.security.Constraint
 import org.eclipse.jetty.util.ssl.SslContextFactory
 import org.eclipse.jetty.util.thread.QueuedThreadPool
 import org.eclipse.jetty.webapp.WebAppContext
@@ -69,11 +67,21 @@ private fun startServer(
     war: String?,
     accessLog: String?
 ) {
+    val allowedMethods = EnumSet.of(HttpMethod.GET, HttpMethod.HEAD, HttpMethod.POST)
+
     val threadPool = QueuedThreadPool()
     threadPool.name = "server"
 
     val httpConfig = HttpConfiguration()
     httpConfig.addCustomizer(SecureRequestCustomizer())
+
+    httpConfig.addCustomizer { _, _, request ->
+        val method = HttpMethod.fromString(request.method)
+        if (!allowedMethods.contains(method)) {
+            request.isHandled = true
+            request.response.status = HttpStatus.METHOD_NOT_ALLOWED_405
+        }
+    }
     val http = HttpConnectionFactory(httpConfig)
     val server = Server(threadPool)
 
@@ -97,21 +105,6 @@ private fun startServer(
 
     val constraintSecurityHandler = ConstraintSecurityHandler()
     context.securityHandler = constraintSecurityHandler
-
-    val constraintDisableTrace = Constraint()
-    constraintDisableTrace.authenticate = true
-    val mappingDisableTrace = ConstraintMapping()
-    mappingDisableTrace.pathSpec = "/"
-    mappingDisableTrace.method = "TRACE"
-    mappingDisableTrace.constraint = constraintDisableTrace
-    constraintSecurityHandler.addConstraintMapping(mappingDisableTrace)
-
-    val constraintEnabledEverythingButTrace = Constraint()
-    val mappingEnableEverythingButTrace = ConstraintMapping()
-    mappingEnableEverythingButTrace.pathSpec = "/"
-    mappingEnableEverythingButTrace.methodOmissions = arrayOf("TRACE")
-    mappingEnableEverythingButTrace.constraint = constraintEnabledEverythingButTrace
-    constraintSecurityHandler.addConstraintMapping(mappingEnableEverythingButTrace)
 
     if (war != null) {
         context.war = war
