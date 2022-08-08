@@ -5,7 +5,6 @@ import kotlinx.cli.ArgType
 import kotlinx.cli.default
 import org.eclipse.jetty.http.HttpMethod
 import org.eclipse.jetty.http.HttpStatus
-import org.eclipse.jetty.security.ConstraintSecurityHandler
 import org.eclipse.jetty.server.*
 import org.eclipse.jetty.util.resource.Resource
 import org.eclipse.jetty.util.ssl.SslContextFactory
@@ -96,8 +95,6 @@ private fun startServer(
 
     val context = WebAppContext()
 
-    val constraintSecurityHandler = ConstraintSecurityHandler()
-    context.securityHandler = constraintSecurityHandler
 
     if (war != null) {
         context.war = war
