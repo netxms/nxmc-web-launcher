@@ -3,18 +3,16 @@ package org.netxms.web
 import kotlinx.cli.ArgParser
 import kotlinx.cli.ArgType
 import kotlinx.cli.default
+import org.eclipse.jetty.http.HttpHeader
 import org.eclipse.jetty.http.HttpMethod
 import org.eclipse.jetty.http.HttpStatus
 import org.eclipse.jetty.server.*
 import org.eclipse.jetty.server.handler.ErrorHandler
-import org.eclipse.jetty.servlet.ErrorPageErrorHandler
 import org.eclipse.jetty.util.resource.Resource
 import org.eclipse.jetty.util.ssl.SslContextFactory
 import org.eclipse.jetty.util.thread.QueuedThreadPool
 import org.eclipse.jetty.webapp.WebAppContext
 import java.util.*
-import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpServletResponse
 
 val ALLOWED_METHODS: EnumSet<HttpMethod> = EnumSet.of(HttpMethod.GET, HttpMethod.HEAD, HttpMethod.POST)
 
@@ -74,6 +72,12 @@ private fun startServer(
             request.isHandled = true
             request.response.status = HttpStatus.METHOD_NOT_ALLOWED_405
         }
+    }
+    httpConfig.addCustomizer { _, _, request ->
+        request.response.setHeader("Content-Security-Policy", "default-src 'self' 'unsafe-eval' 'unsafe-inline'")
+        request.response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+        request.response.setHeader("X-Frame-Options", "SAMEORIGIN")
+        request.response.setHeader("X-Content-Type-Options", "nosniff")
     }
     httpConfig.sendServerVersion = false
     val http = HttpConnectionFactory(httpConfig)
