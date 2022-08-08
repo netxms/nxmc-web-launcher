@@ -6,11 +6,15 @@ import kotlinx.cli.default
 import org.eclipse.jetty.http.HttpMethod
 import org.eclipse.jetty.http.HttpStatus
 import org.eclipse.jetty.server.*
+import org.eclipse.jetty.server.handler.ErrorHandler
+import org.eclipse.jetty.servlet.ErrorPageErrorHandler
 import org.eclipse.jetty.util.resource.Resource
 import org.eclipse.jetty.util.ssl.SslContextFactory
 import org.eclipse.jetty.util.thread.QueuedThreadPool
 import org.eclipse.jetty.webapp.WebAppContext
 import java.util.*
+import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpServletResponse
 
 val ALLOWED_METHODS: EnumSet<HttpMethod> = EnumSet.of(HttpMethod.GET, HttpMethod.HEAD, HttpMethod.POST)
 
@@ -78,6 +82,10 @@ private fun startServer(
     threadPool.name = "server"
     val server = Server(threadPool)
 
+    server.errorHandler = ErrorHandler()
+    server.errorHandler.isShowServlet = false
+    server.errorHandler.isShowStacks = false
+
     if (httpPort != 0) {
         val connector = ServerConnector(server, http)
         connector.port = httpPort
@@ -96,6 +104,8 @@ private fun startServer(
 
     val context = WebAppContext()
 
+    context.errorHandler.isShowStacks = false
+    context.errorHandler.isShowServlet = false
 
     if (war != null) {
         context.war = war
