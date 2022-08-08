@@ -71,6 +71,7 @@ private fun startServer(
             request.response.status = HttpStatus.METHOD_NOT_ALLOWED_405
         }
     }
+    httpConfig.sendServerVersion = false
     val http = HttpConnectionFactory(httpConfig)
 
     val threadPool = QueuedThreadPool()
