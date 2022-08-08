@@ -13,6 +13,7 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool
 import org.eclipse.jetty.webapp.WebAppContext
 import java.util.*
 
+val ALLOWED_METHODS: EnumSet<HttpMethod> = EnumSet.of(HttpMethod.GET, HttpMethod.HEAD, HttpMethod.POST)
 
 fun main(args: Array<String>) {
     val parser = ArgParser("netxms-web-launcher")
@@ -62,22 +63,19 @@ fun main(args: Array<String>) {
 private fun startServer(
     httpPort: Int, httpsPort: Int, keystore: String, keystorePassword: String?, war: String?, accessLog: String?
 ) {
-    val allowedMethods = EnumSet.of(HttpMethod.GET, HttpMethod.HEAD, HttpMethod.POST)
-
-    val threadPool = QueuedThreadPool()
-    threadPool.name = "server"
-
     val httpConfig = HttpConfiguration()
     httpConfig.addCustomizer(SecureRequestCustomizer())
-
     httpConfig.addCustomizer { _, _, request ->
         val method = HttpMethod.fromString(request.method)
-        if (!allowedMethods.contains(method)) {
+        if (!ALLOWED_METHODS.contains(method)) {
             request.isHandled = true
             request.response.status = HttpStatus.METHOD_NOT_ALLOWED_405
         }
     }
     val http = HttpConnectionFactory(httpConfig)
+
+    val threadPool = QueuedThreadPool()
+    threadPool.name = "server"
     val server = Server(threadPool)
 
     if (httpPort != 0) {
