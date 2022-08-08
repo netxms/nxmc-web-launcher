@@ -12,7 +12,7 @@ repositories {
 
 def slf4jVersion = '2.0.0-alpha7'
 def junitVersion = '5.8.2'
-def jettyVersion = '10.0.9' // DO NOT UPGRADE to v11, 10.x is the latest which supports pre-servlet5
+def jettyVersion = '10.0.11' // DO NOT UPGRADE to v11, 10.x is the latest which supports pre-servlet5
 
 dependencies {
     implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.6.21'
