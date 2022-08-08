@@ -3,13 +3,17 @@ package org.netxms.web
 import kotlinx.cli.ArgParser
 import kotlinx.cli.ArgType
 import kotlinx.cli.default
+import org.eclipse.jetty.http.HttpMethod
+import org.eclipse.jetty.http.HttpStatus
+import org.eclipse.jetty.security.ConstraintMapping
+import org.eclipse.jetty.security.ConstraintSecurityHandler
 import org.eclipse.jetty.server.*
 import org.eclipse.jetty.util.resource.Resource
+import org.eclipse.jetty.util.security.Constraint
 import org.eclipse.jetty.util.ssl.SslContextFactory
 import org.eclipse.jetty.util.thread.QueuedThreadPool
 import org.eclipse.jetty.webapp.WebAppContext
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import java.util.*
 
 
 fun main(args: Array<String>) {
@@ -90,6 +94,25 @@ private fun startServer(
     }
 
     val context = WebAppContext()
+
+    val constraintSecurityHandler = ConstraintSecurityHandler()
+    context.securityHandler = constraintSecurityHandler
+
+    val constraintDisableTrace = Constraint()
+    constraintDisableTrace.authenticate = true
+    val mappingDisableTrace = ConstraintMapping()
+    mappingDisableTrace.pathSpec = "/"
+    mappingDisableTrace.method = "TRACE"
+    mappingDisableTrace.constraint = constraintDisableTrace
+    constraintSecurityHandler.addConstraintMapping(mappingDisableTrace)
+
+    val constraintEnabledEverythingButTrace = Constraint()
+    val mappingEnableEverythingButTrace = ConstraintMapping()
+    mappingEnableEverythingButTrace.pathSpec = "/"
+    mappingEnableEverythingButTrace.methodOmissions = arrayOf("TRACE")
+    mappingEnableEverythingButTrace.constraint = constraintEnabledEverythingButTrace
+    constraintSecurityHandler.addConstraintMapping(mappingEnableEverythingButTrace)
+
     if (war != null) {
         context.war = war
     } else {
