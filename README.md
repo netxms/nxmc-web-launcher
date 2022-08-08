@@ -10,6 +10,9 @@ For production use it's recommended to setup reverse proxy ([Reproxy](https://gi
 
 ```shell
 ./gradlew build
+
+# override version (mainly for *DistTar/*DistZip tasks)
+./gradlew clean build -Pversion=3.10.320-285
 ```
 
 If file "nxmc.war" is found in the root folder of the project during build,

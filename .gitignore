@@ -3,7 +3,15 @@
 /.vscode/
 /bin/
 /build/
+/src/*/dist/zulu11.56.19-ca-jdk11.0.15/
 
 !gradle-wrapper.jar
 .gradletasknamecache
 gradle-app.setting
+
+nxmc.war
+
+*.crt
+*.pem
+*.pkcs12
+*.req

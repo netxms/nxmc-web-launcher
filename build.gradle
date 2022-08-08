@@ -1,10 +1,10 @@
 plugins {
     id 'java'
     id 'org.jetbrains.kotlin.jvm' version '1.7.10'
+    id 'distribution'
 }
 
 group 'org.netxms'
-version '1.0'
 
 repositories {
     mavenCentral()
@@ -37,6 +37,7 @@ test {
 }
 
 jar {
+    archiveFileName = "launcher.jar"
     manifest {
         attributes "Main-Class": "org.netxms.web.LauncherKt"
     }
@@ -51,4 +52,18 @@ jar {
     }
 
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+distributions {
+    solaris {
+        contents {
+            from jar
+        }
+    }
+
+    macosx_aarch64 {
+        contents {
+            from jar
+        }
+    }
 }
