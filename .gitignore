@@ -3,7 +3,7 @@
 /.vscode/
 /bin/
 /build/
-/src/*/dist/zulu11.56.19-ca-jdk11.0.15/
+/src/*/dist/*jdk*/
 
 !gradle-wrapper.jar
 .gradletasknamecache

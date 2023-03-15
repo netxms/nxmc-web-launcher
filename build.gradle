@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.7.10'
+    id 'org.jetbrains.kotlin.jvm' version '1.8.0'
     id 'distribution'
 }
 
@@ -10,9 +10,16 @@ repositories {
     mavenCentral()
 }
 
-def slf4jVersion = '2.0.0-beta1'
-def junitVersion = '5.9.0'
-def jettyVersion = '10.0.11' // DO NOT UPGRADE to v11, 10.x is the latest which supports pre-servlet5
+kotlin {
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
+}
+
+def slf4jVersion = '2.0.6'
+def junitVersion = '5.9.2'
+def jettyVersion = '10.0.13' // DO NOT UPGRADE to v11, 10.x is the latest which supports pre-servlet5
+def hopliteVersion = '2.7.0'
 
 dependencies {
     implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.7.10'
@@ -27,6 +34,9 @@ dependencies {
     implementation "org.eclipse.jetty:jetty-servlet:${jettyVersion}"
     //noinspection GradlePackageUpdate
     implementation "org.eclipse.jetty:jetty-webapp:${jettyVersion}"
+
+    implementation "com.sksamuel.hoplite:hoplite-core:${hopliteVersion}"
+    implementation "com.sksamuel.hoplite:hoplite-toml:${hopliteVersion}"
 
     testImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
@@ -50,6 +60,11 @@ jar {
             into('/META-INF/webapps/nxmc')
         }
     }
+    if (file("api.war").exists()) {
+        from(zipTree("api.war")) {
+            into('/META-INF/webapps/nxmc')
+        }
+    }
 
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
@@ -64,6 +79,25 @@ distributions {
     macosx_aarch64 {
         contents {
             from jar
+        }
+    }
+
+    aix {
+        contents {
+            from jar
+        }
+    }
+}
+
+tasks.withType(Tar) {
+    compression = Compression.GZIP
+    archiveExtension = 'tar.gz'
+}
+
+gradle.taskGraph.whenReady {
+    graph -> graph.allTasks.forEach {
+        if (it.name.endsWith('DistZip')) {
+            it.enabled = false
         }
     }
 }
