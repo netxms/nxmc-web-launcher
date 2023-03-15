@@ -3,7 +3,6 @@ package org.netxms.web
 import kotlinx.cli.ArgParser
 import kotlinx.cli.ArgType
 import kotlinx.cli.default
-import org.eclipse.jetty.http.HttpHeader
 import org.eclipse.jetty.http.HttpMethod
 import org.eclipse.jetty.http.HttpStatus
 import org.eclipse.jetty.server.*
@@ -49,6 +48,10 @@ fun main(args: Array<String>) {
         ArgType.String, description = "Write access log to separate file, otherwise will be sent to common log"
     )
 
+    val disableSni by parser.option(
+        ArgType.Boolean, description = "Disable SNI host verification"
+    ).default(false)
+
     parser.parse(args)
 
     if (System.getenv().containsKey(keystorePassword)) {
@@ -58,14 +61,22 @@ fun main(args: Array<String>) {
     System.setProperty(org.slf4j.simple.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, logLevel)
     System.setProperty(org.slf4j.simple.SimpleLogger.LOG_FILE_KEY, log)
 
-    startServer(httpPort, httpsPort, keystore, keystorePassword, war, accessLog)
+    startServer(httpPort, httpsPort, keystore, keystorePassword, war, accessLog, !disableSni)
 }
 
 private fun startServer(
-    httpPort: Int, httpsPort: Int, keystore: String, keystorePassword: String?, war: String?, accessLog: String?
+    httpPort: Int,
+    httpsPort: Int,
+    keystore: String,
+    keystorePassword: String?,
+    war: String?,
+    accessLog: String?,
+    enableSniHostCheck: Boolean
 ) {
     val httpConfig = HttpConfiguration()
-    httpConfig.addCustomizer(SecureRequestCustomizer())
+    val secureRequestCustomizer = SecureRequestCustomizer()
+    secureRequestCustomizer.isSniHostCheck = enableSniHostCheck
+    httpConfig.addCustomizer(secureRequestCustomizer)
     httpConfig.addCustomizer { _, _, request ->
         val method = HttpMethod.fromString(request.method)
         if (!ALLOWED_METHODS.contains(method)) {
