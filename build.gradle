@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.8.0'
+    id 'org.jetbrains.kotlin.jvm' version '1.9.0'
     id 'distribution'
 }
 
@@ -16,13 +16,13 @@ kotlin {
     }
 }
 
-def slf4jVersion = '2.0.6'
-def junitVersion = '5.9.2'
-def jettyVersion = '10.0.13' // DO NOT UPGRADE to v11, 10.x is the latest which supports pre-servlet5
-def hopliteVersion = '2.7.0'
+def slf4jVersion = '2.0.7'
+def junitVersion = '5.10.0'
+def jettyVersion = '10.0.15' // DO NOT UPGRADE to v11, 10.x is the latest which supports pre-servlet5
+def hopliteVersion = '2.7.5'
 
 dependencies {
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.7.10'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.0'
     implementation('org.jetbrains.kotlinx:kotlinx-cli-jvm:0.3.5')
 
     implementation "org.slf4j:slf4j-api:${slf4jVersion}"
