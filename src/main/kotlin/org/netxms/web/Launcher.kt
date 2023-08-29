@@ -7,6 +7,7 @@ import org.eclipse.jetty.http.HttpMethod
 import org.eclipse.jetty.http.HttpStatus
 import org.eclipse.jetty.server.*
 import org.eclipse.jetty.server.handler.ErrorHandler
+import org.eclipse.jetty.server.handler.gzip.GzipHandler
 import org.eclipse.jetty.util.resource.Resource
 import org.eclipse.jetty.util.ssl.SslContextFactory
 import org.eclipse.jetty.util.thread.QueuedThreadPool
@@ -136,6 +137,11 @@ private fun startServer(
         Slf4jRequestLogWriter()
     }
     server.requestLog = CustomRequestLog(logWriter, CustomRequestLog.EXTENDED_NCSA_FORMAT)
+
+    GzipHandler().apply {
+        handler = server.handler
+        server.handler = this
+    }
 
     if (context.war == null) {
         println("ERROR: WAR file is not available. Set location with '--war' argument.")
