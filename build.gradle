@@ -1,10 +1,10 @@
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.9.0'
+    id 'org.jetbrains.kotlin.jvm' version '2.1.0'
     id 'distribution'
 }
 
-group 'org.netxms'
+group = 'org.netxms'
 
 repositories {
     mavenCentral()
@@ -12,17 +12,16 @@ repositories {
 
 kotlin {
     jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
 def slf4jVersion = '2.0.7'
 def junitVersion = '5.10.0'
 def jettyVersion = '10.0.15' // DO NOT UPGRADE to v11, 10.x is the latest which supports pre-servlet5
-def hopliteVersion = '2.7.5'
+def hopliteVersion = '2.8.2'
 
 dependencies {
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.0'
     implementation('org.jetbrains.kotlinx:kotlinx-cli-jvm:0.3.5')
 
     implementation "org.slf4j:slf4j-api:${slf4jVersion}"
@@ -94,10 +93,4 @@ tasks.withType(Tar) {
     archiveExtension = 'tar.gz'
 }
 
-gradle.taskGraph.whenReady {
-    graph -> graph.allTasks.forEach {
-        if (it.name.endsWith('DistZip')) {
-            it.enabled = false
-        }
-    }
-}
+tasks.matching { it.name.endsWith('DistZip') }.configureEach { enabled = false }
