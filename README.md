@@ -1,6 +1,6 @@
 # nxmc-web-launcher
 
-This is a small wrapper around Jetty10, which bundles NetXMS web interface.
+This is a small wrapper around Jetty 12, which bundles NetXMS web interface.
 
 Main purpose is to provide single runnable JAR file with simple HTTPS setup.
 

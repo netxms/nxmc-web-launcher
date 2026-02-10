@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Jetty 10 wrapper that bundles the NetXMS web management console (NXMC) into a single runnable fat JAR with built-in HTTPS support. The entire application is a single Kotlin file (`src/main/kotlin/org/netxms/web/Launcher.kt`).
+Jetty 12 (EE10) wrapper that bundles the NetXMS web management console (NXMC) into a single runnable fat JAR with built-in HTTPS support. The entire application is a single Kotlin file (`src/main/kotlin/org/netxms/web/Launcher.kt`).
 
 ## Build & Run
 
@@ -26,7 +26,7 @@ Place `nxmc.war` (or `api.war`) in the project root before building — it gets 
 
 ## Key Constraints
 
-- **Jetty pinned at 10.0.15** — v11+ dropped pre-servlet5 support, do not upgrade.
+- **Jetty 12.1.6 (EE10)** — uses `jakarta.servlet` namespace via `jetty-ee10-webapp`.
 - **JVM target: Java 17** (set via `jvmToolchain` in build.gradle).
 - **Kotlin 2.1.0** with official code style (`gradle.properties`).
 
@@ -36,16 +36,16 @@ Single entry point `LauncherKt.main()` that:
 1. Parses CLI args via kotlinx-cli
 2. Configures SLF4J-Simple logging
 3. Creates Jetty `Server` with HTTP and/or HTTPS connectors
-4. Applies security customizers: method filtering (GET/HEAD/POST only), CSP, HSTS, X-Frame-Options, X-Content-Type-Options
+4. Applies security headers customizer (CSP, HSTS, X-Frame-Options, X-Content-Type-Options)
 5. Sets up `WebAppContext` from bundled WAR or `--war` path
-6. Wraps handler in `GzipHandler`
+6. Wraps handler chain: `MethodFilterHandler` (GET/HEAD/POST only) → `CompressionHandler` (gzip) → `WebAppContext`
 7. Starts server
 
 Keystore password resolution: if the `--keystorePassword` value matches an environment variable name, the env var's value is used instead.
 
 ## Dependencies
 
-kotlinx-cli, SLF4J (api + simple), Jetty 10 (server/servlet/webapp), Hoplite (core + toml — config parsing). JUnit 5 for tests. Kotlin stdlib is auto-included by Kotlin 2.x plugin.
+kotlinx-cli, SLF4J (api + simple), Jetty 12 (server, ee10-servlet, ee10-webapp, compression-server, compression-gzip), Hoplite (core + toml — config parsing). JUnit 5 for tests. Kotlin stdlib is auto-included by Kotlin 2.x plugin.
 
 ## Gotchas
 

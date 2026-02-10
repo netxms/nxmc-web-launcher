@@ -3,15 +3,16 @@ package org.netxms.web
 import kotlinx.cli.ArgParser
 import kotlinx.cli.ArgType
 import kotlinx.cli.default
+import org.eclipse.jetty.compression.server.CompressionHandler
+import org.eclipse.jetty.ee10.webapp.WebAppContext
 import org.eclipse.jetty.http.HttpMethod
 import org.eclipse.jetty.http.HttpStatus
 import org.eclipse.jetty.server.*
 import org.eclipse.jetty.server.handler.ErrorHandler
-import org.eclipse.jetty.server.handler.gzip.GzipHandler
-import org.eclipse.jetty.util.resource.Resource
+import org.eclipse.jetty.util.Callback
+import org.eclipse.jetty.util.resource.ResourceFactory
 import org.eclipse.jetty.util.ssl.SslContextFactory
 import org.eclipse.jetty.util.thread.QueuedThreadPool
-import org.eclipse.jetty.webapp.WebAppContext
 import java.util.*
 
 val ALLOWED_METHODS: EnumSet<HttpMethod> = EnumSet.of(HttpMethod.GET, HttpMethod.HEAD, HttpMethod.POST)
@@ -65,6 +66,18 @@ fun main(args: Array<String>) {
     startServer(httpPort, httpsPort, keystore, keystorePassword, war, accessLog, !disableSni)
 }
 
+private class MethodFilterHandler(handler: Handler) : Handler.Wrapper(handler) {
+    override fun handle(request: Request, response: Response, callback: Callback): Boolean {
+        val method = HttpMethod.fromString(request.method)
+        if (method != null && !ALLOWED_METHODS.contains(method)) {
+            response.status = HttpStatus.METHOD_NOT_ALLOWED_405
+            callback.succeeded()
+            return true
+        }
+        return super.handle(request, response, callback)
+    }
+}
+
 private fun startServer(
     httpPort: Int,
     httpsPort: Int,
@@ -78,18 +91,12 @@ private fun startServer(
     val secureRequestCustomizer = SecureRequestCustomizer()
     secureRequestCustomizer.isSniHostCheck = enableSniHostCheck
     httpConfig.addCustomizer(secureRequestCustomizer)
-    httpConfig.addCustomizer { _, _, request ->
-        val method = HttpMethod.fromString(request.method)
-        if (!ALLOWED_METHODS.contains(method)) {
-            request.isHandled = true
-            request.response.status = HttpStatus.METHOD_NOT_ALLOWED_405
-        }
-    }
-    httpConfig.addCustomizer { _, _, request ->
-        request.response.setHeader("Content-Security-Policy", "default-src 'self' 'unsafe-eval' 'unsafe-inline'")
-        request.response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
-        request.response.setHeader("X-Frame-Options", "SAMEORIGIN")
-        request.response.setHeader("X-Content-Type-Options", "nosniff")
+    httpConfig.addCustomizer { request, responseHeaders ->
+        responseHeaders.put("Content-Security-Policy", "default-src 'self' 'unsafe-eval' 'unsafe-inline'")
+        responseHeaders.put("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+        responseHeaders.put("X-Frame-Options", "SAMEORIGIN")
+        responseHeaders.put("X-Content-Type-Options", "nosniff")
+        request
     }
     httpConfig.sendServerVersion = false
     val http = HttpConnectionFactory(httpConfig)
@@ -98,9 +105,7 @@ private fun startServer(
     threadPool.name = "server"
     val server = Server(threadPool)
 
-    server.errorHandler = ErrorHandler()
-    server.errorHandler.isShowServlet = false
-    server.errorHandler.isShowStacks = false
+    server.errorHandler = ErrorHandler().apply { isShowStacks = false }
 
     if (httpPort != 0) {
         val connector = ServerConnector(server, http)
@@ -120,16 +125,17 @@ private fun startServer(
 
     val context = WebAppContext()
 
-    context.errorHandler.isShowStacks = false
-    context.errorHandler.isShowServlet = false
+    context.errorHandler = ErrorHandler().apply { isShowStacks = false }
 
     if (war != null) {
         context.war = war
     } else {
-        context.setWarResource(Resource.newClassPathResource("/META-INF/webapps/nxmc"))
+        context.baseResource = ResourceFactory.of(context).newClassLoaderResource("/META-INF/webapps/nxmc")
     }
     context.contextPath = "/"
-    server.handler = context
+
+    val compressionHandler = CompressionHandler(context)
+    server.handler = MethodFilterHandler(compressionHandler)
 
     val logWriter: RequestLog.Writer = if (accessLog != null) {
         RequestLogWriter(accessLog)
@@ -138,12 +144,7 @@ private fun startServer(
     }
     server.requestLog = CustomRequestLog(logWriter, CustomRequestLog.EXTENDED_NCSA_FORMAT)
 
-    GzipHandler().apply {
-        handler = server.handler
-        server.handler = this
-    }
-
-    if (context.war == null) {
+    if (context.war == null && context.baseResource == null) {
         println("ERROR: WAR file is not available. Set location with '--war' argument.")
     } else {
         server.start()
