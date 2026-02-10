@@ -1,0 +1,54 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project
+
+Jetty 10 wrapper that bundles the NetXMS web management console (NXMC) into a single runnable fat JAR with built-in HTTPS support. The entire application is a single Kotlin file (`src/main/kotlin/org/netxms/web/Launcher.kt`).
+
+## Build & Run
+
+```bash
+./gradlew build                              # build fat JAR
+./gradlew clean build -Pversion=3.10.320-285 # with version override (for *DistTar tasks)
+./gradlew test                               # JUnit 5
+
+# run (WAR bundled at build time or specified via --war)
+java -jar build/libs/nxmc-web-launcher-1.0.jar
+java -jar build/libs/nxmc-web-launcher-1.0.jar --httpsPort 8443 --httpPort 0 --keystore server.pkcs12 --keystorePassword NXMC_KEYSTORE_PASSWD
+```
+
+Platform distribution tarballs: `solarisDistTar`, `macosx_aarch64DistTar`, `aixDistTar` (DistZip tasks are disabled).
+
+## WAR Bundling
+
+Place `nxmc.war` (or `api.war`) in the project root before building — it gets unpacked into `/META-INF/webapps/nxmc` inside the fat JAR. Without a bundled WAR, pass `--war <path>` at runtime.
+
+## Key Constraints
+
+- **Jetty pinned at 10.0.15** — v11+ dropped pre-servlet5 support, do not upgrade.
+- **JVM target: Java 17** (set via `jvmToolchain` in build.gradle).
+- **Kotlin 2.1.0** with official code style (`gradle.properties`).
+
+## Architecture
+
+Single entry point `LauncherKt.main()` that:
+1. Parses CLI args via kotlinx-cli
+2. Configures SLF4J-Simple logging
+3. Creates Jetty `Server` with HTTP and/or HTTPS connectors
+4. Applies security customizers: method filtering (GET/HEAD/POST only), CSP, HSTS, X-Frame-Options, X-Content-Type-Options
+5. Sets up `WebAppContext` from bundled WAR or `--war` path
+6. Wraps handler in `GzipHandler`
+7. Starts server
+
+Keystore password resolution: if the `--keystorePassword` value matches an environment variable name, the env var's value is used instead.
+
+## Dependencies
+
+kotlinx-cli, SLF4J (api + simple), Jetty 10 (server/servlet/webapp), Hoplite (core + toml — config parsing). JUnit 5 for tests. Kotlin stdlib is auto-included by Kotlin 2.x plugin.
+
+## Gotchas
+
+- **kotlinx-cli:0.3.5** is obsolete (last release 0.3.6) but works as binary dep with Kotlin 2.x. It emits `java-api-jars`/`java-runtime-jars` deprecation warnings in Gradle 9.x — not fixable on our side.
+- **Gradle 9.x** needs toolchain repo config (foojay plugin) if the target JDK isn't locally installed. Currently JDK 17 is available via mise so no resolver needed.
+- **Groovy DSL in Gradle 10** will require assignment syntax (`group = 'x'` not `group 'x'`).
