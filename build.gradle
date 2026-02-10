@@ -40,6 +40,12 @@ dependencies {
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
 }
 
+processResources {
+    filesMatching('version.properties') {
+        expand(version: project.version)
+    }
+}
+
 test {
     useJUnitPlatform()
 }

@@ -20,6 +20,10 @@ val ALLOWED_METHODS: EnumSet<HttpMethod> = EnumSet.of(HttpMethod.GET, HttpMethod
 fun main(args: Array<String>) {
     val parser = ArgParser("netxms-web-launcher")
 
+    val version by parser.option(
+        ArgType.Boolean, shortName = "v", description = "Print version and exit"
+    ).default(false)
+
     val httpPort by parser.option(
         ArgType.Int, description = "Listen Port for HTTP connector, 0 will disable connector"
     ).default(8080)
@@ -55,6 +59,13 @@ fun main(args: Array<String>) {
     ).default(false)
 
     parser.parse(args)
+
+    if (version) {
+        val props = Properties()
+        object {}.javaClass.getResourceAsStream("/version.properties")?.use { props.load(it) }
+        println("nxmc-web-launcher ${props.getProperty("version", "unknown")}")
+        return
+    }
 
     if (System.getenv().containsKey(keystorePassword)) {
         keystorePassword = System.getenv(keystorePassword)
