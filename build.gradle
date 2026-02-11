@@ -22,7 +22,7 @@ def jettyVersion = '12.1.6'
 def hopliteVersion = '2.8.2'
 
 dependencies {
-    implementation('org.jetbrains.kotlinx:kotlinx-cli-jvm:0.3.5')
+    implementation('com.github.ajalt.clikt:clikt:5.0.2')
 
     implementation "org.slf4j:slf4j-api:${slf4jVersion}"
     implementation "org.slf4j:slf4j-simple:${slf4jVersion}"

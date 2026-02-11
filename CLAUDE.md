@@ -33,7 +33,7 @@ Place `nxmc.war` (or `api.war`) in the project root before building — it gets 
 ## Architecture
 
 Single entry point `LauncherKt.main()` that:
-1. Parses CLI args via kotlinx-cli
+1. Parses CLI args via Clikt
 2. Configures SLF4J-Simple logging
 3. Creates Jetty `Server` with HTTP and/or HTTPS connectors
 4. Applies security headers customizer (CSP, HSTS, X-Frame-Options, X-Content-Type-Options)
@@ -45,10 +45,9 @@ Keystore password resolution: if the `--keystorePassword` value matches an envir
 
 ## Dependencies
 
-kotlinx-cli, SLF4J (api + simple), Jetty 12 (server, ee10-servlet, ee10-webapp, compression-server, compression-gzip), Hoplite (core + toml — config parsing). JUnit 5 for tests. Kotlin stdlib is auto-included by Kotlin 2.x plugin.
+Clikt 5.0.2, SLF4J (api + simple), Jetty 12 (server, ee10-servlet, ee10-webapp, compression-server, compression-gzip), Hoplite (core + toml — config parsing). JUnit 5 for tests. Kotlin stdlib is auto-included by Kotlin 2.x plugin.
 
 ## Gotchas
 
-- **kotlinx-cli:0.3.5** is obsolete (last release 0.3.6) but works as binary dep with Kotlin 2.x. It emits `java-api-jars`/`java-runtime-jars` deprecation warnings in Gradle 9.x — not fixable on our side.
 - **Gradle 9.x** needs toolchain repo config (foojay plugin) if the target JDK isn't locally installed. Currently JDK 17 is available via mise so no resolver needed.
 - **Groovy DSL in Gradle 10** will require assignment syntax (`group = 'x'` not `group 'x'`).

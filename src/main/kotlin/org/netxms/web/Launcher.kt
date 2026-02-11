@@ -1,8 +1,12 @@
 package org.netxms.web
 
-import kotlinx.cli.ArgParser
-import kotlinx.cli.ArgType
-import kotlinx.cli.default
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.main
+import com.github.ajalt.clikt.parameters.options.default
+import com.github.ajalt.clikt.parameters.options.flag
+import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.versionOption
+import com.github.ajalt.clikt.parameters.types.int
 import org.eclipse.jetty.compression.server.CompressionHandler
 import org.eclipse.jetty.ee10.webapp.WebAppContext
 import org.eclipse.jetty.http.HttpMethod
@@ -17,65 +21,44 @@ import java.util.*
 
 val ALLOWED_METHODS: EnumSet<HttpMethod> = EnumSet.of(HttpMethod.GET, HttpMethod.HEAD, HttpMethod.POST)
 
-fun main(args: Array<String>) {
-    val parser = ArgParser("netxms-web-launcher")
-
-    val version by parser.option(
-        ArgType.Boolean, shortName = "v", description = "Print version and exit"
-    ).default(false)
-
-    val httpPort by parser.option(
-        ArgType.Int, description = "Listen Port for HTTP connector, 0 will disable connector"
-    ).default(8080)
-    val httpsPort by parser.option(
-        ArgType.Int, description = "Listen Port for HTTPS connector, 0 will disable connector"
-    ).default(0)
-
-    val keystore by parser.option(
-        ArgType.String, description = "Location of the keystore file with server's certificate and private key"
-    ).default("/var/lib/netxms/nxmc.pkcs12")
-    var keystorePassword by parser.option(
-        ArgType.String,
-        description = "Keystore file password. If environment variable exists with this name - it's value will be used instead"
-    ).default("")
-
-    val war by parser.option(
-        ArgType.String,
-        description = "nxmc.war file location",
-    )
-
-    val log by parser.option(
-        ArgType.String, description = "Log file name or special names \"System.err\"/\"System.out\""
-    ).default("System.err")
-    val logLevel by parser.option(
-        ArgType.String, description = "Verbosity level"
-    ).default("INFO")
-    val accessLog by parser.option(
-        ArgType.String, description = "Write access log to separate file, otherwise will be sent to common log"
-    )
-
-    val disableSni by parser.option(
-        ArgType.Boolean, description = "Disable SNI host verification"
-    ).default(false)
-
-    parser.parse(args)
-
-    if (version) {
+class Launcher : CliktCommand(name = "netxms-web-launcher") {
+    init {
         val props = Properties()
-        object {}.javaClass.getResourceAsStream("/version.properties")?.use { props.load(it) }
-        println("nxmc-web-launcher ${props.getProperty("version", "unknown")}")
-        return
+        javaClass.getResourceAsStream("/version.properties")?.use { props.load(it) }
+        versionOption(props.getProperty("version", "unknown"), names = setOf("--version", "-v")) { "nxmc-web-launcher $it" }
     }
 
-    if (System.getenv().containsKey(keystorePassword)) {
-        keystorePassword = System.getenv(keystorePassword)
+    private val httpPort by option("--httpPort", help = "Listen Port for HTTP connector, 0 will disable connector")
+        .int().default(8080)
+    private val httpsPort by option("--httpsPort", help = "Listen Port for HTTPS connector, 0 will disable connector")
+        .int().default(0)
+    private val keystore by option("--keystore", help = "Location of the keystore file with server's certificate and private key")
+        .default("/var/lib/netxms/nxmc.pkcs12")
+    private val keystorePassword by option("--keystorePassword",
+        help = "Keystore file password. If environment variable exists with this name - its value will be used instead"
+    ).default("")
+    private val war by option("--war", help = "nxmc.war file location")
+    private val log by option("--log", help = "Log file name or special names \"System.err\"/\"System.out\"")
+        .default("System.err")
+    private val logLevel by option("--logLevel", help = "Verbosity level").default("INFO")
+    private val accessLog by option("--accessLog", help = "Write access log to separate file, otherwise will be sent to common log")
+    private val disableSni by option("--disableSni", help = "Disable SNI host verification").flag()
+
+    override fun run() {
+        val resolvedKeystorePassword = if (System.getenv().containsKey(keystorePassword)) {
+            System.getenv(keystorePassword)
+        } else {
+            keystorePassword
+        }
+
+        System.setProperty(org.slf4j.simple.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, logLevel)
+        System.setProperty(org.slf4j.simple.SimpleLogger.LOG_FILE_KEY, log)
+
+        startServer(httpPort, httpsPort, keystore, resolvedKeystorePassword, war, accessLog, !disableSni)
     }
-
-    System.setProperty(org.slf4j.simple.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, logLevel)
-    System.setProperty(org.slf4j.simple.SimpleLogger.LOG_FILE_KEY, log)
-
-    startServer(httpPort, httpsPort, keystore, keystorePassword, war, accessLog, !disableSni)
 }
+
+fun main(args: Array<String>) = Launcher().main(args)
 
 private class MethodFilterHandler(handler: Handler) : Handler.Wrapper(handler) {
     override fun handle(request: Request, response: Response, callback: Callback): Boolean {

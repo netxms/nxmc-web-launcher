@@ -49,18 +49,29 @@ $ ls -l build/libs/nxmc-web-launcher-1.0.jar
 ## Launch
 
 ```
-$ java -jar build/libs/nxmc-web-launcher-1.0.jar -h
-Usage: netxms-web-launcher options_list
+$ java -jar build/libs/nxmc-web-launcher-1.0.jar --help
+Usage: netxms-web-launcher [<options>]
+
 Options:
-    --httpPort [8080] -> Listen Port for HTTP connector, 0 will disable connector { Int }
-    --httpsPort [0] -> Listen Port for HTTPS connector, 0 will disable connector { Int }
-    --keystore [/var/lib/netxms/nxmc.pkcs12] -> Location of the keystore file with server's certificate and private key { String }
-    --keystorePassword [] -> Keystore file password. If environment variable exists with this name - it's value will be used instead { String }
-    --war -> nxmc.war file location { String }
-    --log [System.err] -> Log file name or special names "System.err"/"System.out" { String }
-    --logLevel [INFO] -> Verbosity level { String }
-    --accessLog -> Write access log to separate file, otherwise will be sent to common log { String }
-    --help, -h -> Usage info
+  --httpPort=<int>            Listen Port for HTTP connector, 0 will disable
+                              connector (default: 8080)
+  --httpsPort=<int>           Listen Port for HTTPS connector, 0 will disable
+                              connector (default: 0)
+  --keystore=<text>           Location of the keystore file with server's
+                              certificate and private key (default:
+                              /var/lib/netxms/nxmc.pkcs12)
+  --keystorePassword=<text>   Keystore file password. If environment variable
+                              exists with this name - its value will be used
+                              instead
+  --war=<text>                nxmc.war file location
+  --log=<text>                Log file name or special names
+                              "System.err"/"System.out" (default: System.err)
+  --logLevel=<text>           Verbosity level (default: INFO)
+  --accessLog=<text>          Write access log to separate file, otherwise will
+                              be sent to common log
+  --disableSni                Disable SNI host verification
+  --version, -v               Show the version and exit
+  -h, --help                  Show this message and exit
 ```
 
 By default, HTTPS connector is disabled and HTTP will be started on 8080.
