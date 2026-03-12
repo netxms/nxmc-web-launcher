@@ -14,10 +14,13 @@ import org.eclipse.jetty.http.HttpStatus
 import org.eclipse.jetty.server.*
 import org.eclipse.jetty.server.handler.ErrorHandler
 import org.eclipse.jetty.util.Callback
-import org.eclipse.jetty.util.resource.ResourceFactory
 import org.eclipse.jetty.util.ssl.SslContextFactory
 import org.eclipse.jetty.util.thread.QueuedThreadPool
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.*
+import java.util.jar.JarFile
 
 val ALLOWED_METHODS: EnumSet<HttpMethod> = EnumSet.of(HttpMethod.GET, HttpMethod.HEAD, HttpMethod.POST)
 
@@ -72,6 +75,27 @@ private class MethodFilterHandler(handler: Handler) : Handler.Wrapper(handler) {
     }
 }
 
+private fun extractBundledWebapp(): Path? {
+    val jarUrl = Launcher::class.java.protectionDomain.codeSource?.location ?: return null
+    val jarPath = File(jarUrl.toURI())
+    if (!jarPath.isFile) return null
+
+    val prefix = "META-INF/webapps/nxmc/"
+    val tempDir = Files.createTempDirectory("nxmc-webapp")
+    Runtime.getRuntime().addShutdownHook(Thread { tempDir.toFile().deleteRecursively() })
+
+    JarFile(jarPath).use { jar ->
+        jar.entries().asSequence()
+            .filter { it.name.startsWith(prefix) && !it.isDirectory }
+            .forEach { entry ->
+                val target = tempDir.resolve(entry.name.removePrefix(prefix))
+                Files.createDirectories(target.parent)
+                jar.getInputStream(entry).use { Files.copy(it, target) }
+            }
+    }
+    return tempDir
+}
+
 private fun startServer(
     httpPort: Int,
     httpsPort: Int,
@@ -124,7 +148,10 @@ private fun startServer(
     if (war != null) {
         context.war = war
     } else {
-        context.baseResource = ResourceFactory.of(context).newClassLoaderResource("/META-INF/webapps/nxmc")
+        val extracted = extractBundledWebapp()
+        if (extracted != null) {
+            context.war = extracted.toString()
+        }
     }
     context.contextPath = "/"
 
