@@ -26,8 +26,8 @@ $ ./gradlew build
 BUILD SUCCESSFUL in 945ms
 4 actionable tasks: 4 executed
 
-$ ls -l build/libs/nxmc-web-launcher-1.0.jar
-.rw-r--r-- 4.5M alk  3 Jun 10:55 build/libs/nxmc-web-launcher-1.0.jar
+$ ls -l build/libs/launcher.jar
+.rw-r--r-- 4.5M alk  3 Jun 10:55 build/libs/launcher.jar
 
 $ curl --output nxmc.war https://netxms.org/download/releases/4.1/nxmc-4.1.333.war
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
@@ -42,14 +42,14 @@ $ ./gradlew build
 BUILD SUCCESSFUL in 1s
 4 actionable tasks: 1 executed, 3 up-to-date
 
-$ ls -l build/libs/nxmc-web-launcher-1.0.jar
-.rw-r--r-- 30M alk  3 Jun 10:56 build/libs/nxmc-web-launcher-1.0.jar
+$ ls -l build/libs/launcher.jar
+.rw-r--r-- 30M alk  3 Jun 10:56 build/libs/launcher.jar
 ```
 
 ## Launch
 
 ```
-$ java -jar build/libs/nxmc-web-launcher-1.0.jar --help
+$ java -jar build/libs/launcher.jar --help
 Usage: netxms-web-launcher [<options>]
 
 Options:
@@ -99,7 +99,7 @@ openssl pkcs12 -export -inkey server-key.pem -in server-cert.pem -out server.pkc
 Now you can start with HTTPS connector enabled (and without plain-text HTTP):
 
 ```shell
-java -jar build/libs/nxmc-web-launcher-1.0.jar --httpsPort 8443 --httpPort 0 --keystore server.pkcs12 --keystorePassword example1
+java -jar build/libs/launcher.jar --httpsPort 8443 --httpPort 0 --keystore server.pkcs12 --keystorePassword example1
 ```
 
 Keystore password can be read from the environment variables as well, just use variable name instead of the password:
@@ -110,5 +110,5 @@ read NXMC_KEYSTORE_PASSWD
 export NXMC_KEYSTORE_PASSWD
 
 # now run it
-java -jar build/libs/nxmc-web-launcher-1.0.jar --httpsPort 8443 --httpPort 0 --keystore server.pkcs12 --keystorePassword NXMC_KEYSTORE_PASSWD
+java -jar build/libs/launcher.jar --httpsPort 8443 --httpPort 0 --keystore server.pkcs12 --keystorePassword NXMC_KEYSTORE_PASSWD
 ```

@@ -20,3 +20,5 @@ nxmc.war
 progress*.txt
 .DS_Store
 .claude/settings.local.json
+/.gradle-home/
+/.kotlin/

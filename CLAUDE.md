@@ -11,11 +11,11 @@ Jetty 12 (EE10) wrapper that bundles the NetXMS web management console (NXMC) in
 ```bash
 ./gradlew build                              # build fat JAR
 ./gradlew clean build -Pversion=3.10.320-285 # with version override (for *DistTar tasks)
-./gradlew test                               # JUnit 5
+./gradlew test                               # JUnit 6
 
 # run (WAR bundled at build time or specified via --war)
-java -jar build/libs/nxmc-web-launcher-1.0.jar
-java -jar build/libs/nxmc-web-launcher-1.0.jar --httpsPort 8443 --httpPort 0 --keystore server.pkcs12 --keystorePassword NXMC_KEYSTORE_PASSWD
+java -jar build/libs/launcher.jar
+java -jar build/libs/launcher.jar --httpsPort 8443 --httpPort 0 --keystore server.pkcs12 --keystorePassword NXMC_KEYSTORE_PASSWD
 ```
 
 Platform distribution tarballs: `solarisDistTar`, `macosx_aarch64DistTar`, `aixDistTar` (DistZip tasks are disabled).
@@ -26,9 +26,9 @@ Place `nxmc.war` (or `api.war`) in the project root before building — it gets 
 
 ## Key Constraints
 
-- **Jetty 12.1.6 (EE10)** — uses `jakarta.servlet` namespace via `jetty-ee10-webapp`.
+- **Jetty 12.1 (EE10)** — uses `jakarta.servlet` namespace via `jetty-ee10-webapp`.
 - **JVM target: Java 17** (set via `jvmToolchain` in build.gradle).
-- **Kotlin 2.1.0** with official code style (`gradle.properties`).
+- **Kotlin 2.4** with official code style (`gradle.properties`).
 
 ## Architecture
 
@@ -45,9 +45,9 @@ Keystore password resolution: if the `--keystorePassword` value matches an envir
 
 ## Dependencies
 
-Clikt 5.0.2, SLF4J (api + simple), Jetty 12 (server, ee10-servlet, ee10-webapp, compression-server, compression-gzip), Hoplite (core + toml — config parsing). JUnit 5 for tests. Kotlin stdlib is auto-included by Kotlin 2.x plugin.
+Clikt, SLF4J (api + simple), Jetty 12 (server, ee10-servlet, ee10-webapp, compression-server, compression-gzip), Hoplite (core + toml — config parsing). JUnit 6 for tests. Kotlin stdlib is auto-included by Kotlin 2.x plugin. Versions are defined at the top of `build.gradle`.
 
 ## Gotchas
 
-- **Gradle 9.x** needs toolchain repo config (foojay plugin) if the target JDK isn't locally installed. Currently JDK 17 is available via mise so no resolver needed.
+- Toolchain provisioning uses the foojay resolver plugin (`settings.gradle`) — required so Gradle can download JDK 17 when it isn't locally installed (auto-provisioning without a toolchain repo fails in Gradle 10).
 - **Groovy DSL in Gradle 10** will require assignment syntax (`group = 'x'` not `group 'x'`).
