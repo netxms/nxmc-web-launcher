@@ -22,3 +22,4 @@ progress*.txt
 .claude/settings.local.json
 /.gradle-home/
 /.kotlin/
+nxmc.logfile_IS_UNDEFINED
