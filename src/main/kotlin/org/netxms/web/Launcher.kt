@@ -17,6 +17,8 @@ import org.eclipse.jetty.util.Callback
 import org.eclipse.jetty.util.ssl.SslContextFactory
 import org.eclipse.jetty.util.thread.QueuedThreadPool
 import java.io.File
+import java.io.PrintWriter
+import java.io.Writer
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.*
@@ -75,6 +77,24 @@ private class MethodFilterHandler(handler: Handler) : Handler.Wrapper(handler) {
     }
 }
 
+internal class GenericErrorHandler : ErrorHandler() {
+    override fun generateResponse(request: Request, response: Response, code: Int, message: String?, cause: Throwable?, callback: Callback) {
+        super.generateResponse(request, response, code, HttpStatus.getMessage(code), null, callback)
+    }
+
+    override fun writeErrorHtmlBody(request: Request, writer: Writer, code: Int, message: String, cause: Throwable?) {
+        writer.write("<h2>HTTP ERROR $code $message</h2>")
+    }
+
+    override fun writeErrorPlain(request: Request, writer: PrintWriter, code: Int, message: String, cause: Throwable?) {
+        writer.write("HTTP ERROR $code $message\n")
+    }
+
+    override fun writeErrorJson(request: Request, writer: PrintWriter, code: Int, message: String, cause: Throwable?) {
+        writer.write("{\"status\":\"$code\",\"message\":\"$message\"}")
+    }
+}
+
 private fun extractBundledWebapp(): Path? {
     val jarUrl = Launcher::class.java.protectionDomain.codeSource?.location ?: return null
     val jarPath = File(jarUrl.toURI())
@@ -123,7 +143,7 @@ private fun startServer(
     threadPool.name = "server"
     val server = Server(threadPool)
 
-    server.errorHandler = ErrorHandler().apply { isShowStacks = false }
+    server.errorHandler = GenericErrorHandler()
 
     if (httpPort != 0) {
         val connector = ServerConnector(server, http)
@@ -143,7 +163,7 @@ private fun startServer(
 
     val context = WebAppContext()
 
-    context.errorHandler = ErrorHandler().apply { isShowStacks = false }
+    context.errorHandler = GenericErrorHandler()
 
     if (war != null) {
         context.war = war

@@ -37,9 +37,10 @@ Single entry point `LauncherKt.main()` that:
 2. Configures SLF4J-Simple logging
 3. Creates Jetty `Server` with HTTP and/or HTTPS connectors
 4. Applies security headers customizer (CSP, HSTS, X-Frame-Options, X-Content-Type-Options)
-5. Sets up `WebAppContext` from bundled WAR or `--war` path
-6. Wraps handler chain: `MethodFilterHandler` (GET/HEAD/POST only) → `CompressionHandler` (gzip) → `WebAppContext`
-7. Starts server
+5. Installs `GenericErrorHandler` on server and context (error bodies carry only the status and its standard reason, details go to the log)
+6. Sets up `WebAppContext` from bundled WAR or `--war` path
+7. Wraps handler chain: `MethodFilterHandler` (GET/HEAD/POST only) → `CompressionHandler` (gzip) → `WebAppContext`
+8. Starts server
 
 Keystore password resolution: if the `--keystorePassword` value matches an environment variable name, the env var's value is used instead.
 
